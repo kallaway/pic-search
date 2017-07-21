@@ -1,0 +1,58 @@
+/****** Main Styling ******/
+
+body {
+  text-transform: lowercase;
+	font-family: 'Monaco', monospace;
+	font-size: 16px;
+	color: #7FF709;
+	background-color: #000;
+	text-align: left;
+}
+
+.container {
+	padding-left: 50px;
+	margin-top: 40px;
+  width: 75%;
+}
+
+.footer {
+	margin-top: 60px;
+}
+
+h1 {
+  text-transform: none;
+}
+
+h2 {
+  margin-bottom: 25px;
+}
+
+h3 {
+  margin-top: 30px;
+}
+
+ol {
+	list-style-position: inside;
+}
+ul {
+	list-style-type: none;
+}
+
+a {
+  text-decoration: underline;
+/* 	color: #2574A9; */
+}
+
+a:active {
+  color: #01FF70;
+}
+
+a:visited {
+  color: #7FF709;
+}
+/****** Logo Div Styling ******/
+
+img {
+	margin: 20px auto 0 auto;
+	display: block;
+}

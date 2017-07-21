@@ -1,2 +1,1 @@
-# pic-search
-Image Search Abstraction Layer App
+# Backend Challenges boilerplate - package.json
