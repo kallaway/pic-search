@@ -2,7 +2,8 @@
   "name": "fcc-learn-npm-package-json",
   "dependencies": {
     "express": "^4.14.0",
-    "mongodb": "^2.2.30"
+    "mongodb": "^2.2.30",
+    "request-promise": "^4.2.1"
   },
   "main": "server.js",
   "scripts": {

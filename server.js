@@ -8,6 +8,7 @@
 var fs = require('fs');
 var express = require('express');
 var app = express();
+var rp = require('request-promise');
 
 var MongoClient = require('mongodb').MongoClient;
 
@@ -40,14 +41,14 @@ MongoClient.connect(process.env.MONGODB_URL, (err, db) => {
           res.type('txt').send(data.toString());
         });
       });
+    
+    // for testing:
+    // https://pic-search.glitch.me/api/imagesearch/cats?offset=3
 
     // EXAMPLE: /api/imagesearch/lolcats%20funny?offset=10
     app.route('/api/imagesearch/:searchString')
       .get(function(req, res) {
-        // make a request to some API to get back the results, send them back to user.
-
         // save a record to the database of:
-        // term: "lolcats funny",
         // when: "2017-07-20T03:22:15.904Z"
         let timeOfSearch = new Date();
       
@@ -59,13 +60,47 @@ MongoClient.connect(process.env.MONGODB_URL, (err, db) => {
         let searchString = req.params.searchString;
         let decodedSearchString = decodeURI(searchString);
       
+        // check if it is a page or not?
+        // don't have to convert but just in case.
+      
+        // add handling for when it's not specified
+        let indexToStart = Number(pageToView);
+        let cx = process.env.GENGINE_ID;
+      
+        // make a request to some API to get back the results, send them back to user.
+        let baseImageSearchURL = "https://www.googleapis.com/customsearch/v1/?q=";
+        let imageSearchURL = baseImageSearchURL + searchString;
+        imageSearchURL += "&start=" + indexToStart;
+        imageSearchURL += "&key=" + process.env.GSEARCH_KEY;
+        imageSearchURL += "&cx=" + cx
+        imageSearchURL += "&searchType=image"
+      
+        console.log('IMAGE SEARCH URL: ' + imageSearchURL);
+      
+        // push the search info into database
         let searchInfo = {
           "term": decodedSearchString,
           "when": timeOfSearch
         }
+        picSearchCollection.insert(searchInfo);
       
         console.log('searchString: ' + searchString);
         console.log('decodedSearchString:' + decodedSearchString);
+      
+        // send request to Google Custom Search API
+        rp(imageSearchURL)
+          .then((imageData) => {
+            // do something with image data
+            console.log(imageData);
+            res.json(JSON.parse(imageData));
+          })
+          .catch((err) => {
+              console.log('Houston, we have a problem.');
+              console.log(err);
+              res.json({ "error": err });
+          });
+      
+        // res.json({ everythingIs: "OK"});
       })
 
     // EXAMPLE: /api/latest/imagesearch/
