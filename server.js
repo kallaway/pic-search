@@ -53,8 +53,16 @@ MongoClient.connect(process.env.MONGODB_URL, (err, db) => {
         let timeOfSearch = new Date();
       
         // get the number of page to display
-        let pageToView = req.query.offset;
-        console.log('pageToView: ' + pageToView);
+        let startingIndexToView;
+        if (req.query.page) {
+          if (req.query.page == 1) {
+            startingIndexToView = 1;
+          } else {
+            startingIndexToView = (req.query.page-1) * 10;
+          }
+        } else {
+          startingIndexToView = 1;
+        }
       
         // getting the clean search query
         let searchString = req.params.searchString;
@@ -64,7 +72,7 @@ MongoClient.connect(process.env.MONGODB_URL, (err, db) => {
         // don't have to convert but just in case.
       
         // add handling for when it's not specified
-        let indexToStart = Number(pageToView);
+        let indexToStart = Number(startingIndexToView);
         let cx = process.env.GENGINE_ID;
       
         // make a request to some API to get back the results, send them back to user.
@@ -74,9 +82,7 @@ MongoClient.connect(process.env.MONGODB_URL, (err, db) => {
         imageSearchURL += "&key=" + process.env.GSEARCH_KEY;
         imageSearchURL += "&cx=" + cx
         imageSearchURL += "&searchType=image"
-      
-        console.log('IMAGE SEARCH URL: ' + imageSearchURL);
-      
+            
         // push the search info into database
         let searchInfo = {
           "term": decodedSearchString,
@@ -84,38 +90,44 @@ MongoClient.connect(process.env.MONGODB_URL, (err, db) => {
         }
         picSearchCollection.insert(searchInfo);
       
-        console.log('searchString: ' + searchString);
-        console.log('decodedSearchString:' + decodedSearchString);
+        // console.log('searchString: ' + searchString);
+        // console.log('decodedSearchString:' + decodedSearchString);
       
         // send request to Google Custom Search API
         rp(imageSearchURL)
           .then((imageData) => {
             // do something with image data
-            console.log(imageData);
-            res.json(JSON.parse(imageData));
+            imageData = JSON.parse(imageData);
+          
+            let imageResults = [];
+          
+            imageData.items.forEach((imgObj) => {
+              let imageInfo = {
+                url: imgObj.link,
+                snippet: imgObj.snippet,
+                thumbnail: imgObj.image.thumbnailLink,
+                context: imgObj.image.contextLink
+              }
+              
+              imageResults.push(imageInfo);
+            });         
+            res.json(imageResults);
           })
           .catch((err) => {
               console.log('Houston, we have a problem.');
               console.log(err);
               res.json({ "error": err });
           });
-      
-        // res.json({ everythingIs: "OK"});
       })
 
     // EXAMPLE: /api/latest/imagesearch/
     app.route('/api/latest/imagesearch')
       .get(function(req, res) {
-
+          picSearchCollection.find({}, {'_id': 0}).sort({when:-1}).limit(10).toArray((error, latestSearches) => {
+              if (err) throw error;
+              res.send(latestSearches);
+          });
       });
-
-    /*
-    Image Results Format
-    url: "http://i0.kym-cdn.com/photos/images/original/000/024/741/lolcats-funny-picture-lalalalala.jpg",
-    snippet: "Image - 24741] | LOLcats | Know Your Meme",
-    thumbnail: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRbI6Mcuceeqicb3LYxL1Qer6aY7-pDUCQk6hplRCZVMxNzSLF6jDb0Z1Y",
-    context:
-    */
 
     app.route('/')
         .get(function(req, res) {
